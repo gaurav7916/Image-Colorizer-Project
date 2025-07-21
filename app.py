@@ -95,7 +95,22 @@ else:
     
     st.image(color, use_container_width=True)
     
-    print("done!")
+    color = Image.fromarray(color)
+    color.save("colorized_image.jpg")
+    with open("colorized_image.jpg", "rb") as file:
+        btn = st.download_button(
+            label="Download Image",
+            data=file,
+            file_name="colorized_image.jpg",
+            mime="image/jpeg"
+        )
+    if btn:
+        st.success("Image downloaded successfully!")
+    # Save the colorized image
+    os.remove("colorized_image.jpg")  # Clean up the saved file after download
+    # Remove the saved file after download
+    if os.path.exists("colorized_image.jpg"):
+        os.remove("colorized_image.jpg")
 
 
 # In[ ]:
