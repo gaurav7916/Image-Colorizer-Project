@@ -1,8 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[6]:
-
 # import the necessary packages
 import numpy as np
 import cv2
@@ -70,7 +65,6 @@ def colorizer(img):
     # Return the colorized images
     return colorized
 
-##########################################################################################################
     
 st.write("""
           # Colorize Black and White image
@@ -88,13 +82,13 @@ else:
     img = np.array(image)
     
     st.text("The Original Image")
-    st.image(image, use_container_width=True)
+    st.image(image, use_column_width=True)
     
-    st.text("Final Colorized Image")
     color = colorizer(img)
+    st.text("Final Colorized Image")
     
-    st.image(color, use_container_width=True)
-    
+    st.image(color, use_column_width=True)
+
     color = Image.fromarray(color)
     color.save("colorized_image.jpg")
     with open("colorized_image.jpg", "rb") as file:
@@ -104,17 +98,90 @@ else:
             file_name="colorized_image.jpg",
             mime="image/jpeg"
         )
+# Save the colorized image
     if btn:
         st.success("Image downloaded successfully!")
-    # Save the colorized image
+# Save the colorized image
     os.remove("colorized_image.jpg")  # Clean up the saved file after download
-    # Remove the saved file after download
+# Clean up the saved file after download
+# Remove the saved file after download
     if os.path.exists("colorized_image.jpg"):
         os.remove("colorized_image.jpg")
 
+# CSS for styling
+    st.markdown("""
+    <style>
+        /* General styling */
+        .stTextArea, .stTextInput, .stButton, .stMarkdown {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+        }
+        
+       /* Download button styling (targeting anchor tags inside stDownloadButton) */
+        .stDownloadButton > button {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #FF6B6B, #FFD93D);
+            color: black;
+            border: none;
+            border-radius: 2em;
+            padding: 0.7em 1.5em;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+            transition: background 0.3s, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        
+        .stDownloadButton > button:hover {
+            background-image: linear-gradient(to top, rgb(44, 44, 44), #252731);
+            transform: scale(1.05);
+        }
 
-# In[ ]:
-
-
-
-
+        /* Success message */
+        .stSuccess {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-top: 1rem;
+        }
+        
+        /* CSS variables and animations */
+        :root {
+            --bright-blue: rgb(0, 100, 255);
+            --bright-green: rgb(0, 255, 0);
+            --bright-red: rgb(255, 0, 0);
+            --background: rgba(0, 0, 0, 0.8);
+            --foreground: white;
+            --border-size: 1px;
+            --border-radius: 0.5em;
+        }
+        
+        @property --border-angle-1 {
+            syntax: "<angle>";
+            inherits: true;
+            initial-value: 0deg;
+        }
+        
+        @property --border-angle-2 {
+            syntax: "<angle>";
+            inherits: true;
+            initial-value: 90deg;
+        }
+        
+        @property --border-angle-3 {
+            syntax: "<angle>";
+            inherits: true;
+            initial-value: 180deg;
+        }
+        
+        @keyframes rotateBackground {
+            to { --border-angle-1: 360deg; }
+        }
+        
+        @keyframes rotateBackground2 {
+            to { --border-angle-2: -270deg; }
+        }
+        
+        @keyframes rotateBackground3 {
+            to { --border-angle-3: 540deg; }
+        }
+    </style>
+    """, unsafe_allow_html=True)
