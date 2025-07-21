@@ -88,12 +88,12 @@ else:
     img = np.array(image)
     
     st.text("The Original Image")
-    st.image(image, use_column_width=True)
+    st.image(image, use_container_width=True)
     
     st.text("Final Colorized Image")
     color = colorizer(img)
     
-    st.image(color, use_column_width=True)
+    st.image(color, use_container_width=True)
     
     print("done!")
 
