@@ -40,9 +40,7 @@ streamlit run app.py
 
 ### Technologies Used
 
-<img width="150" height="150" alt="6968821_preview" src="https://github.com/user-attachments/assets/bfbabfc0-38cf-4d4c-9ee7-e19b0a8e83b6" />
-
-[<img target="_blank" src="https://github.com/user-attachments/assets/bfbabfc0-38cf-4d4c-9ee7-e19b0a8e83b6" width=150>](https://www.python.org)[<img target="_blank" src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/OpenCV_Logo_with_text_svg_version.svg/730px-OpenCV_Logo_with_text_svg_version.svg.png" width=100>](https://opencv.org/)[<img target="_blank" src="https://miro.medium.com/max/4000/0*cSCGhssjeajRD3qs.png" width=200>](https://www.streamlit.io/)
+[<img target="_blank" src="https://github.com/user-attachments/assets/bfbabfc0-38cf-4d4c-9ee7-e19b0a8e83b6" width=180>](https://www.python.org)[<img target="_blank" src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/OpenCV_Logo_with_text_svg_version.svg/730px-OpenCV_Logo_with_text_svg_version.svg.png" width=90>](https://opencv.org/)[<img target="_blank" src="https://miro.medium.com/max/4000/0*cSCGhssjeajRD3qs.png" width=200>](https://www.streamlit.io/)
 
 
 ### License
