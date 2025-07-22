@@ -26,11 +26,12 @@ def add_bg_from_local(image_file):
 
 add_bg_from_local('wallpaper_background.jpg')
 
-def colorizer(img):
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-    # load our serialized black and white colorizer model and cluster
-    # center points from disk
+def colorizer(pil_image):
+    # Convert to RGB to ensure 3-channel format
+    pil_image = pil_image.convert("RGB")
+    img = np.array(pil_image)
+
+    # load model and cluster points      
     prototxt = "models_colorization_deploy_v2.prototxt"
     model = "colorization_release_v2.caffemodel"
     points = "pts_in_hull.npy"
@@ -42,20 +43,18 @@ def colorizer(img):
     pts = pts.transpose().reshape(2, 313, 1, 1)
     net.getLayer(class8).blobs = [pts.astype("float32")]
     net.getLayer(conv8).blobs = [np.full([1, 313], 2.606, dtype="float32")]
-    # scale the pixel intensities to the range [0, 1], and then convert the image from the BGR to Lab color space
-    scaled = img.astype("float32") / 255.0
-    lab = cv2.cvtColor(scaled, cv2.COLOR_RGB2LAB)
-    # resize the Lab image to 224x224 (the dimensions the colorization
-    #network accepts), split channels, extract the 'L' channel, and then perform mean centering
+   # scale the pixel intensities to the range [0, 1], and then convert the image from the BGR to Lab color space
+    img = img.astype("float32") / 255.0
+    lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
+    # resize the Lab image to 224x224 (the dimensions the colorization network accepts), split channels, extract the 'L' channel, and then perform mean centering
     resized = cv2.resize(lab, (224, 224))
     L = cv2.split(resized)[0]
     L -= 50
     # pass the L channel through the network which will *predict* the 'a' and 'b' channel values
     net.setInput(cv2.dnn.blobFromImage(L))
     ab = net.forward()[0, :, :, :].transpose((1, 2, 0))
-    # resize the predicted 'ab' volume to the same dimensions as our input image
     ab = cv2.resize(ab, (img.shape[1], img.shape[0]))
-    # grab the 'L' channel from the *original* input image (not the
+     # grab the 'L' channel from the *original* input image (not the
     # resized one) and concatenate the original 'L' channel with the predicted 'ab' channels
     L = cv2.split(lab)[0]
     colorized = np.concatenate((L[:, :, np.newaxis], ab), axis=2)
@@ -65,15 +64,13 @@ def colorizer(img):
     # the current colorized image is represented as a floating point
     # data type in the range [0, 1] -- let's convert to an unsigned 8-bit integer representation in the range [0, 255]
     colorized = (255 * colorized).astype("uint8")
-    # Return the colorized images
     return colorized
 
 
-
 st.markdown("<h2 style='font-family: monospace, sans-serif; color:rgb(255, 255, 255); font-size: 30px'>Colorize Black and White image 🎨</h2>", unsafe_allow_html=True)
-st.write("This is an app to turn any black and white images to a colored image. The model uses a pre-trained deep learning model for colorizing black and white images.")
+st.markdown("<h5>This is an app to turn any black and white images to a colored image (supported image types are jpg, jpeg, png). The model uses a pre-trained deep learning model for colorizing black and white images.</h6>", unsafe_allow_html=True)
 
-file = st.sidebar.file_uploader("Please upload an image file", type=["jpg", "png"])
+file = st.sidebar.file_uploader("Please upload an image file", type=["jpg", "jpeg", "png"])
 
 if file is None:
     st.text("You haven't uploaded an image file")
@@ -82,7 +79,7 @@ else:
     img = np.array(image)
     
     # Colorize the image
-    color = colorizer(img)
+    color = colorizer(image)
     
     # Create two columns side by side
     col1, col2 = st.columns(2)
