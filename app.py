@@ -6,6 +6,9 @@ import streamlit as st
 from PIL import Image
 import base64
 
+# Set page configuration
+st.set_page_config(page_title="Colorize Black and White image", page_icon="🎨", layout="wide")
+
 def add_bg_from_local(image_file):
     with open(image_file, "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read())
@@ -65,13 +68,10 @@ def colorizer(img):
     # Return the colorized images
     return colorized
 
-    
-st.write("""
-          # Colorize Black and White image
-          """
-          )
 
-st.write("This is an app to turn any Black and White images to a colored image. The model uses a pre-trained deep learning model for colorizing black and white images.")
+
+st.markdown("<h2 style='font-family: monospace, sans-serif; color:rgb(255, 255, 255); font-size: 30px'>Colorize Black and White image 🎨</h2>", unsafe_allow_html=True)
+st.write("This is an app to turn any black and white images to a colored image. The model uses a pre-trained deep learning model for colorizing black and white images.")
 
 file = st.sidebar.file_uploader("Please upload an image file", type=["jpg", "png"])
 
@@ -81,34 +81,39 @@ else:
     image = Image.open(file)
     img = np.array(image)
     
-    st.text("The Original Image")
-    st.image(image, use_container_width=True)
-    
+    # Colorize the image
     color = colorizer(img)
-    st.text("Final Colorized Image")
     
-    st.image(color, use_container_width=True)
+    # Create two columns side by side
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("The Original Image")
+        st.image(image, use_container_width=True)
 
-    color = Image.fromarray(color)
-    color.save("colorized_image.jpg")
-    with open("colorized_image.jpg", "rb") as file:
-        btn = st.download_button(
-            label="Download Image",
-            data=file,
-            file_name="colorized_image.jpg",
-            mime="image/jpeg"
-        )
-# Save the colorized image
-    if btn:
-        st.success("Image downloaded successfully!")
-# Save the colorized image
-    os.remove("colorized_image.jpg")  # Clean up the saved file after download
-# Clean up the saved file after download
-# Remove the saved file after download
-    if os.path.exists("colorized_image.jpg"):
-        os.remove("colorized_image.jpg")
+    with col2:
+        st.subheader("Final Colorized Image")
+        st.image(color, use_container_width=True)
+        
+        # Save and download the colorized image
+        color = Image.fromarray(color)
+        color.save("colorized_image.jpg")
+        with open("colorized_image.jpg", "rb") as file:
+            btn = st.download_button(
+                label="Download Image",
+                data=file,
+                file_name="colorized_image.jpg",
+                mime="image/jpeg"
+            )
+        # Save the colorized image
+        if btn:
+            st.success("Image downloaded successfully!")
+        os.remove("colorized_image.jpg")  
+        # Clean up the saved file after download
+        if os.path.exists("colorized_image.jpg"):
+            os.remove("colorized_image.jpg")
 
-# CSS for styling
+    # CSS for styling
     st.markdown("""
     <style>
         /* General styling */
