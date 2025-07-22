@@ -1,8 +1,11 @@
 # Image Colorizer
 Black and white image colorization with OpenCV.
+https://image-colorizer-project.streamlit.app
 
-## Demo
-![Alt Text](https://j.gifs.com/2xVL2P.gif)
+
+### Demo sample of the app
+<img width="1506" height="903" alt="Screenshot 2025-07-21 at 9 17 31 PM" src="https://github.com/user-attachments/assets/5ef430dd-e7fe-4c37-a163-d428ce587f30" />
+
 
 ## Overview
 Image colorization is the process of taking an input grayscale (black and white) image and then producing an output colorized image that represents the semantic colors and tones of the input (for example, an ocean on a clear sunny day must be plausibly “blue” — it can’t be colored “hot pink” by the model).
