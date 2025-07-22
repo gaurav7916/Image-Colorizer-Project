@@ -7,7 +7,7 @@ from PIL import Image
 import base64
 
 # Set page configuration
-st.set_page_config(page_title="Colorize Black and White image", page_icon="🎨", layout="wide")
+st.set_page_config(page_title="Colorize Black and White Image", page_icon="🎨", layout="wide")
 
 def add_bg_from_local(image_file):
     with open(image_file, "rb") as image_file:
@@ -67,7 +67,7 @@ def colorizer(pil_image):
     return colorized
 
 
-st.markdown("<h2 style='font-family: monospace, sans-serif; color:rgb(255, 255, 255); font-size: 30px'>Colorize Black and White image 🎨</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='font-family: monospace, sans-serif; color:rgb(255, 255, 255); font-size: 30px'>Colorize Black and White Image 🎨</h2>", unsafe_allow_html=True)
 st.markdown("<h5>This is an app to turn any black and white images to a colored image (supported image types are jpg, jpeg, png). The model uses a pre-trained deep learning model for colorizing black and white images.</h6>", unsafe_allow_html=True)
 
 file = st.sidebar.file_uploader("Please upload an image file", type=["jpg", "jpeg", "png"])
