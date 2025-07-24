@@ -4,7 +4,7 @@ https://image-colorizer-project.streamlit.app
 
 
 ### Demo sample of the app
-<img width="1506" height="903" alt="Screenshot 2025-07-21 at 9 17 31 PM" src="https://github.com/user-attachments/assets/5ef430dd-e7fe-4c37-a163-d428ce587f30" />
+<img width="3024" height="1806" alt="image" src="https://github.com/user-attachments/assets/b06ee645-a52a-4af2-b604-6680718382f5" />
 
 
 ### Overview
@@ -20,6 +20,12 @@ This project aims to provide a solution for image and video colorization using d
 
 
 ### Technical Aspect
+
+The colorization model is based on research by Richard Zhang, Phillip Isola, and Alexei A. Efros.
+
+<img width="1291" height="353" alt="image" src="https://github.com/user-attachments/assets/89818302-bcf3-468f-8f63-da683df1f6df" />
+https://richzhang.github.io/colorization/resources/images/net_diagram.jpg
+
 - The technique we’ll be covering here today is from Zhang et al.’s 2016 ECCV paper, [Colorful Image Colorization](http://richzhang.github.io/colorization/). Developed at the University of California, Berkeley by Richard Zhang, Phillip Isola, and Alexei A. Efros.
 
 - Previous approaches to black and white image colorization relied on manual human annotation and often produced    desaturated results that were not “believable” as true colorizations.
