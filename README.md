@@ -1,5 +1,5 @@
-## Image Colorizer
-Black and white image colorization with OpenCV.
+## Image and Video Colorizer
+Black and white image/video colorization with OpenCV.
 https://image-colorizer-project.streamlit.app
 
 
@@ -8,11 +8,16 @@ https://image-colorizer-project.streamlit.app
 
 
 ### Overview
-Image colorization is the process of taking an input grayscale (black and white) image and then producing an output colorized image that represents the semantic colors and tones of the input (for example, an ocean on a clear sunny day must be plausibly “blue” — it can’t be colored “hot pink” by the model).
+This project aims to provide a solution for image and video colorization using deep learning techniques. Using convolutional neural networks (CNNs) and modern web technologies, the project enables users to easily add color to grayscale images and videos. Image colorization is the process of taking an input grayscale (black and white) image and then producing an output colorized image that represents the semantic colors and tones of the input.
 
-## Motivation
+### Features
 
-When I learned linear algebra and came to know about how the machine inteprets pictures as tensors and concept of image segmentation. I remember there were some movies which was restored and picutured in theatre. I just came across Research papers of University of california in image colorization. And most iimportantly when I colorized photos of my Grandmother with gorgeous saree, that smile in my mother's face worth it.
+- Image colorization: Convert grayscale images to colorized versions.
+- Video colorization: Extend image colorization to video content.
+- User-friendly interface: Web-based interface for easy interaction and colorization.
+- Real-time processing: Instant colorization of uploaded images and videos.
+- Streamlit integration: Utilizes Streamlit for web application development and deployment.
+
 
 ### Technical Aspect
 - The technique we’ll be covering here today is from Zhang et al.’s 2016 ECCV paper, [Colorful Image Colorization](http://richzhang.github.io/colorization/). Developed at the University of California, Berkeley by Richard Zhang, Phillip Isola, and Alexei A. Efros.
