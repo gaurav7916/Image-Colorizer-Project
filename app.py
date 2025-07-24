@@ -6,8 +6,6 @@ import streamlit as st
 from PIL import Image
 import base64
 import tempfile
-import time
-import argparse
 import imutils
 from imutils.video import VideoStream
 
@@ -104,8 +102,6 @@ def video_colorizer(video_file):
         if not ret:
             print("Can't receive frame (stream end?). Exiting ...")
             break
-
-        # frame = imutils.resize(frame, width=500)
         scaled = frame.astype("float32") / 255.0
         lab = cv2.cvtColor(scaled, cv2.COLOR_RGB2LAB)
 
@@ -404,7 +400,30 @@ elif choice == "Video":
         """, unsafe_allow_html=True)  
 
 elif choice == "About":
-    st.title("About the App")   
-    st.markdown("<h5>This app uses a pre-trained deep learning model to colorize black and white images and videos. It is built using Streamlit, OpenCV, and other Python libraries.</h6>", unsafe_allow_html=True)
-    st.markdown("<h5>Developed by: Gaurav Gupta</h5>", unsafe_allow_html=True)
-    
+    st.markdown("<h2>About the App</h2>", unsafe_allow_html=True)   
+    st.markdown("This app uses a pre-trained deep learning model to colorize black and white images and videos. It is built using Streamlit, OpenCV, and other Python libraries. This project aims to provide a solution for image and video colorization using deep learning techniques. Using convolutional neural networks and modern web technologies, the project enables users to easily add color to grayscale images and videos. Image colorization is the process of taking an input grayscale (black and white) image and then producing an output colorized image that represents the semantic colors and tones of the input.", unsafe_allow_html=True)
+    st.markdown(""" ### Features
+    - **Image colorization**: Convert grayscale images to colorized versions.
+    - **Video colorization**: Extend image colorization to video content.
+    - **User-friendly interface**: Web-based interface for easy interaction and colorization.
+    - **Real-time processing**: Instant colorization of uploaded images and videos.
+    - **Streamlit integration**: Utilizes Streamlit for web application development and deployment.
+
+    ### Technical Aspect
+    The colorization model is based on research by Richard Zhang, Phillip Isola, and Alexei A. Efros.
+
+    ![Model Diagram](https://richzhang.github.io/colorization/resources/images/net_diagram.jpg)
+
+    Previous approaches to black and white image colorization relied on manual human annotation and often produced desaturated results that were not “believable” as true colorizations. Zhang et al. approached image colorization using Convolutional Neural Networks (CNNs) to “hallucinate” what an input grayscale image would look like when colorized.
+
+    - Trained on ImageNet dataset.
+    - Converted RGB to Lab color space:
+        - **L** channel: Lightness
+        - **a** channel: Green-Red
+        - **b** channel: Blue-Yellow
+    - Tackled the uncertainty in color prediction by reframing it as a classification task using class-rebalancing to produce diverse color results.
+
+    The AI model performs colorization via a feed-forward pass through a CNN at test time, trained on over a million color images.
+
+    <h5>Developed by: Gaurav Gupta</h5>
+    """, unsafe_allow_html=True)
