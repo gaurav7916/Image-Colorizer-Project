@@ -146,8 +146,8 @@ activities = ["Image","Video","About"]
 choice = st.sidebar.selectbox("Choose what you want to Colorize.",activities)
 if choice == "Image":
     st.title("Colorize Black and White Image 🎨")
-    st.markdown("<h5>This is an app to turn any black and white images to a colored image (supported image types are jpg, jpeg, png). The model uses a pre-trained deep learning model for colorizing black and white images.</h6>", unsafe_allow_html=True)
-    file = st.sidebar.file_uploader("Please upload an image file", type=["jpg", "jpeg", "png"])
+    st.markdown("<h5>This is an app to turn any black and white images to a colored image (supported image types are jpg, jpeg, png upto 6000*4000 pixels). The model uses a pre-trained deep learning model for colorizing black and white images.</h6>", unsafe_allow_html=True)
+    file = st.sidebar.file_uploader("Please upload an image file (upto 6000*4000 pixels)", type=["jpg", "jpeg", "png"])
 
     if file is None:
         st.text("You haven't uploaded an image file")
