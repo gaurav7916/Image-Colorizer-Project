@@ -411,7 +411,7 @@ elif choice == "About":
     - **Streamlit integration**: Utilizes Streamlit for web application development and deployment.
 
     ### Technical Aspect
-    This code takes a grayscale (or RGB) image → extracts lightness (L) → predicts color distribution (ab) using a CNN → merges → converts back to RGB → outputs a colorized image.
+    It takes a grayscale (or RGB) image/video → extracts lightness (L) → predicts color distribution (ab) using a CNN → merges → converts back to RGB → outputs a colorized image/video.
     
     The colorization model is based on research by Richard Zhang, Phillip Isola, and Alexei A. Efros.
 
