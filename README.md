@@ -8,10 +8,9 @@ https://image-colorizer-project.streamlit.app
 
 
 ### Overview
-This project aims to provide a solution for image and video colorization using deep learning techniques. Using convolutional neural networks (CNNs) and modern web technologies, the project enables users to easily add color to grayscale images and videos. Image colorization is the process of taking an input grayscale (black and white) image and then producing an output colorized image that represents the semantic colors and tones of the input.
+This app uses a pre-trained deep learning model to colorize black and white images and videos. This project aims to provide a solution for image and video colorization using deep learning (CNN trained on millions of color images) to hallucinate colors for grayscale input. The model doesn’t output exact RGB values but predicts chrominance bins (a,b channels) conditioned on luminance (L). By embedding 313 quantized color points, it reduces colorization to a classification + rebalancing problem instead of direct regression (which tends to produce desaturated results). Finally, the grayscale input’s luminance is merged with the predicted ab channels to reconstruct a full-color image.
 
-### Features
-
+### Features:
 - Image colorization: Convert grayscale images to colorized versions.
 - Video colorization: Extend image colorization to video content.
 - User-friendly interface: Web-based interface for easy interaction and colorization.
@@ -19,10 +18,9 @@ This project aims to provide a solution for image and video colorization using d
 - Streamlit integration: Utilizes Streamlit for web application development and deployment.
 
 
-### Technical Aspect
-
+### Technical Aspect:
+It takes a grayscale (or RGB) image/video → extracts lightness (L) → predicts color distribution (ab) using a CNN → merges → converts back to RGB → outputs a colorized image/video.
 The colorization model is based on research by Richard Zhang, Phillip Isola, and Alexei A. Efros.
-
 <img width="1291" height="353" alt="image" src="https://github.com/user-attachments/assets/89818302-bcf3-468f-8f63-da683df1f6df" />
 https://richzhang.github.io/colorization/resources/images/net_diagram.jpg
 
