@@ -36,9 +36,9 @@ def colorizer(pil_image):
     img = np.array(pil_image)
 
     # load model and cluster points      
-    prototxt = "models_colorization_deploy_v2.prototxt"
-    model = "colorization_release_v2.caffemodel"
-    points = "pts_in_hull.npy"
+    prototxt = "models_colorization_deploy_v2.prototxt"       #neural network architecture 
+    model = "colorization_release_v2.caffemodel"              #pretrained weights (trained on ImageNet)
+    points = "pts_in_hull.npy"                                #stores cluster centers of ab color values (313 points), representing quantized chrominance values(color categories)
     net = cv2.dnn.readNetFromCaffe(prototxt, model)
     pts = np.load(points)
     # add the cluster centers as 1x1 convolutions to the model
