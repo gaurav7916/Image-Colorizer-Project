@@ -8,7 +8,12 @@ import base64
 import tempfile
 import imutils
 from imutils.video import VideoStream
-
+import threading
+import time
+import requests
+import logging
+from modelscope.pipelines import pipeline
+from modelscope.utils.constant import Tasks
 
 # Set page configuration
 st.set_page_config(page_title="Colorize Black and White Image", page_icon="🎨", layout="wide")
@@ -27,48 +32,93 @@ def add_bg_from_local(image_file):
     """,
         unsafe_allow_html=True
     )
-
 add_bg_from_local('wallpaper_background.jpg')
 
-def colorizer(pil_image):
-    # Convert to RGB to ensure 3-channel format
-    pil_image = pil_image.convert("RGB")
-    img = np.array(pil_image)
 
-    # load model and cluster points      
-    prototxt = "models_colorization_deploy_v2.prototxt"       #neural network architecture 
-    model = "colorization_release_v2.caffemodel"              #pretrained weights (trained on ImageNet)
-    points = "pts_in_hull.npy"                                #stores cluster centers of ab color values (313 points), representing quantized chrominance values(color categories)
-    net = cv2.dnn.readNetFromCaffe(prototxt, model)
-    pts = np.load(points)
-    # add the cluster centers as 1x1 convolutions to the model
-    class8 = net.getLayerId("class8_ab")
-    conv8 = net.getLayerId("conv8_313_rh")
-    pts = pts.transpose().reshape(2, 313, 1, 1)
-    net.getLayer(class8).blobs = [pts.astype("float32")]
-    net.getLayer(conv8).blobs = [np.full([1, 313], 2.606, dtype="float32")]
-   # scale the pixel intensities to the range [0, 1], and then convert the image from the BGR to Lab color space
-    img = img.astype("float32") / 255.0
-    lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
-    # resize the Lab image to 224x224 (the dimensions the colorization network accepts), split channels, extract the 'L' channel, and then perform mean centering
-    resized = cv2.resize(lab, (224, 224))
-    L = cv2.split(resized)[0]
-    L -= 50
-    # pass the L channel through the network which will *predict* the 'a' and 'b' channel values
-    net.setInput(cv2.dnn.blobFromImage(L))
-    ab = net.forward()[0, :, :, :].transpose((1, 2, 0))
-    ab = cv2.resize(ab, (img.shape[1], img.shape[0]))
-     # grab the 'L' channel from the *original* input image (not the
-    # resized one) and concatenate the original 'L' channel with the predicted 'ab' channels
-    L = cv2.split(lab)[0]
-    colorized = np.concatenate((L[:, :, np.newaxis], ab), axis=2)
-    # convert the output image from the Lab color space to RGB, then clip any values that fall outside the range [0, 1]
-    colorized = cv2.cvtColor(colorized, cv2.COLOR_LAB2RGB)
-    colorized = np.clip(colorized, 0, 1)
-    # the current colorized image is represented as a floating point
-    # data type in the range [0, 1] -- let's convert to an unsigned 8-bit integer representation in the range [0, 255]
-    colorized = (255 * colorized).astype("uint8")
-    return colorized
+last_ping = None
+last_ping_lock = threading.Lock()
+
+# new functions: background pinger and client-side refresh injector
+def start_keep_alive(ping_url: str = None, hours: int = 11):
+    """
+    Start a daemon thread that sends a GET request to ping_url every `hours`.
+    Set PING_URL env var to override the default.
+    """
+    global last_ping
+    url = ping_url or os.getenv("PING_URL", "http://localhost:8501")
+    interval = hours * 3600
+    logging.basicConfig(level=logging.INFO)
+
+    def ping_loop():
+        global last_ping
+        while True:
+            now = time.time()
+            try:
+                requests.get(url, timeout=10)
+                logging.info(f"Keep-alive ping sent to {url} at {time.ctime(now)}")
+            except Exception as e:
+                logging.warning(f"Keep-alive ping failed at {time.ctime(now)}: {e}")
+            # update last ping regardless so UI shows activity attempts
+            with last_ping_lock:
+                last_ping = now
+            time.sleep(interval)
+
+    t = threading.Thread(target=ping_loop, daemon=True)
+    t.start()
+    return t
+
+def get_last_ping():
+    with last_ping_lock:
+        return last_ping
+
+def inject_client_refresh(hours: int = 11):
+    """
+    Inject JS that polyfills crypto.randomUUID if missing and reloads the page after `hours`.
+    Also writes a timestamp to localStorage so you can check client-side last reload in DevTools.
+    """
+    millis = int(hours * 3600 * 1000)
+    js = f"""
+    <script>
+    if (!crypto || !crypto.randomUUID) {{
+        if (typeof crypto !== 'undefined' && crypto.getRandomValues) {{
+            crypto.randomUUID = function() {{
+                const bytes = crypto.getRandomValues(new Uint8Array(16));
+                bytes[6] = (bytes[6] & 0x0f) | 0x40;
+                bytes[8] = (bytes[8] & 0x3f) | 0x80;
+                const hex = Array.from(bytes).map(b => b.toString(16).padStart(2,'0')).join('');
+                return `${{hex.substr(0,8)}}-${{hex.substr(8,4)}}-${{hex.substr(12,4)}}-${{hex.substr(16,4)}}-${{hex.substr(20,12)}}`;
+            }};
+        }} else {{
+            crypto = crypto || {{}};
+            crypto.randomUUID = function() {{
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {{
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                }});
+            }};
+        }}
+    }}
+    // store client reload time to localStorage for manual verification
+    setTimeout(function(){{ 
+        localStorage.setItem('last_client_reload', Date.now());
+        location.reload();
+    }}, {millis});
+    </script>
+    """
+    st.markdown(js, unsafe_allow_html=True)
+
+# start keep-alive behaviors
+start_keep_alive()
+inject_client_refresh()
+
+# Display keep-alive status in UI
+if "last_reload" not in st.session_state:
+    st.session_state["last_reload"] = time.time()
+
+last_ping_ts = get_last_ping()
+last_ping_str = time.ctime(last_ping_ts) if last_ping_ts else "never"
+last_reload_str = time.ctime(st.session_state["last_reload"])
 
 # Function to colorize video
 def video_colorizer(video_file):
@@ -157,6 +207,7 @@ if choice == "Image":
         
         # Colorize the image
         color = colorizer(image)
+        
         
         # Create two columns side by side
         col1, col2 = st.columns(2)
