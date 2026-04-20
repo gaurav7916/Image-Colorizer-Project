@@ -120,6 +120,54 @@ last_ping_ts = get_last_ping()
 last_ping_str = time.ctime(last_ping_ts) if last_ping_ts else "never"
 last_reload_str = time.ctime(st.session_state["last_reload"])
 
+import numpy as np
+import cv2
+from PIL import Image
+import torch
+from modelscope.pipelines import pipeline
+from modelscope.utils.constant import Tasks
+
+
+def colorizer(pil_image, saturation_boost=1.2):
+    """
+    Colorize a grayscale image using DDColor model.
+
+    Args:
+        pil_image: PIL Image (grayscale or RGB)
+        saturation_boost: Post-processing saturation multiplier (1.0 = no change)
+
+    Returns:
+        numpy array (uint8 RGB) of the colorized image
+    """
+    pil_image = pil_image.convert("RGB")
+
+    # Load DDColor model
+    colorization_pipeline = pipeline(
+        Tasks.image_colorization,
+        model="damo/cv_ddcolor_image-colorization"
+    )
+
+    # Run colorization
+    result = colorization_pipeline(np.array(pil_image))
+    colorized = result["output_img"]  # BGR numpy array
+
+    # Convert BGR to RGB
+    colorized = cv2.cvtColor(colorized, cv2.COLOR_BGR2RGB)
+
+    # Bilateral filter to reduce color bleeding across edges
+    for i in range(3):
+        colorized[:, :, i] = cv2.bilateralFilter(
+            colorized[:, :, i].astype("float32"), d=9, sigmaColor=25, sigmaSpace=25
+        ).astype("uint8")
+
+    # Boost saturation in HSV space
+    hsv = cv2.cvtColor(colorized, cv2.COLOR_RGB2HSV).astype("float32")
+    hsv[:, :, 1] *= saturation_boost
+    hsv[:, :, 1] = np.clip(hsv[:, :, 1], 0, 255)
+    colorized = cv2.cvtColor(hsv.astype("uint8"), cv2.COLOR_HSV2RGB)
+
+    return colorized
+
 # Function to colorize video
 def video_colorizer(video_file):
     tfile = tempfile.NamedTemporaryFile(delete=False) 
@@ -214,11 +262,11 @@ if choice == "Image":
         
         with col1:
             st.subheader("Original Image")
-            st.image(image, use_container_width=True)
+            st.image(image, width='stretch')
 
         with col2:
             st.subheader("Final Colorized Image")
-            st.image(color, use_container_width=True)
+            st.image(color, width='stretch')
             
             # Save and download the colorized image
             color = Image.fromarray(color)
