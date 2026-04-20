@@ -6,7 +6,7 @@ moviepy
 modelscope
 torch
 torchvision
-opencv-python
+opencv-python-headless
 addict
 watchdog
 datasets
