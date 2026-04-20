@@ -12,8 +12,10 @@ import threading
 import time
 import requests
 import logging
+import torch
 from modelscope.pipelines import pipeline
 from modelscope.utils.constant import Tasks
+
 
 # Set page configuration
 st.set_page_config(page_title="Colorize Black and White Image", page_icon="🎨", layout="wide")
@@ -119,13 +121,6 @@ if "last_reload" not in st.session_state:
 last_ping_ts = get_last_ping()
 last_ping_str = time.ctime(last_ping_ts) if last_ping_ts else "never"
 last_reload_str = time.ctime(st.session_state["last_reload"])
-
-import numpy as np
-import cv2
-from PIL import Image
-import torch
-from modelscope.pipelines import pipeline
-from modelscope.utils.constant import Tasks
 
 
 def colorizer(pil_image, saturation_boost=1.2):
