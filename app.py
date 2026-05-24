@@ -39,11 +39,15 @@ def add_bg_from_local(image_file):
 if os.path.exists('wallpaper_background.jpg'):
     add_bg_from_local('wallpaper_background.jpg')
 
-@st.cache_resource
-def load_colorizer():
-    return pipeline(Tasks.image_colorization, model="damo/cv_ddcolor_image-colorization")
 
-colorization_pipeline = load_colorizer()
+@st.cache_resource(show_spinner="Loading colorization model…")
+def get_colorization_pipeline():
+    return pipeline(
+        Tasks.image_colorization,
+        model="damo/cv_ddcolor_image-colorization",
+    )
+colorization_pipeline = get_colorization_pipeline()
+
 
 last_ping = None
 last_ping_lock = threading.Lock()
