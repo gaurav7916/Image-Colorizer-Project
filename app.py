@@ -15,6 +15,9 @@ import logging
 import torch
 from modelscope.pipelines import pipeline
 from modelscope.utils.constant import Tasks
+import tempfile
+
+
 
 # Set page configuration
 st.set_page_config(page_title="Colorize Black and White Image", page_icon="🎨", layout="wide")
@@ -33,41 +36,51 @@ def add_bg_from_local(image_file):
     """,
         unsafe_allow_html=True
     )
-add_bg_from_local('wallpaper_background.jpg')
+if os.path.exists('wallpaper_background.jpg'):
+    add_bg_from_local('wallpaper_background.jpg')
 
+@st.cache_resource
+def load_colorizer():
+    return pipeline(Tasks.image_colorization, model="damo/cv_ddcolor_image-colorization")
+
+colorization_pipeline = load_colorizer()
 
 last_ping = None
 last_ping_lock = threading.Lock()
 
-# new functions: background pinger and client-side refresh injector
-def start_keep_alive(ping_url: str = None, hours: int = 11):
-    """
-    Start a daemon thread that sends a GET request to ping_url every `hours`.
-    Set PING_URL env var to override the default.
-    """
-    global last_ping
-    url = ping_url or os.getenv("PING_URL", "http://localhost:8501")
-    interval = hours * 3600
-    logging.basicConfig(level=logging.INFO)
+# # new functions: background pinger and client-side refresh injector
+# def start_keep_alive(ping_url: str = None, hours: int = 11):
+#     """
+#     Start a daemon thread that sends a GET request to ping_url every `hours`.
+#     Set PING_URL env var to override the default.
+#     """
+#     global last_ping
+#     url = ping_url or os.getenv("PING_URL", "http://localhost:8501")
+#     interval = hours * 3600
+#     logging.basicConfig(level=logging.INFO)
+    
+#     def ping_loop():
+#         global last_ping
+#         while True:
+#             now = time.time()
+#             try:
+#                 requests.get(url, timeout=10)
+#                 logging.info(f"Keep-alive ping sent to {url} at {time.ctime(now)}")
+#             except Exception as e:
+#                 logging.warning(f"Keep-alive ping failed at {time.ctime(now)}: {e}")
+#             # update last ping regardless so UI shows activity attempts
+#             with last_ping_lock:
+#                 last_ping = now
+#             time.sleep(interval)
+    
+#     t = threading.Thread(target=ping_loop, daemon=True)
+#     t.start()
+#     return t
 
-    def ping_loop():
-        global last_ping
-        while True:
-            now = time.time()
-            try:
-                requests.get(url, timeout=10)
-                logging.info(f"Keep-alive ping sent to {url} at {time.ctime(now)}")
-            except Exception as e:
-                logging.warning(f"Keep-alive ping failed at {time.ctime(now)}: {e}")
-            # update last ping regardless so UI shows activity attempts
-            with last_ping_lock:
-                last_ping = now
-            time.sleep(interval)
-
-    t = threading.Thread(target=ping_loop, daemon=True)
-    t.start()
-    return t
-
+# if "keep_alive_started" not in st.session_state:
+#     start_keep_alive()
+#     st.session_state["keep_alive_started"] = True
+    
 def get_last_ping():
     with last_ping_lock:
         return last_ping
@@ -110,7 +123,7 @@ def inject_client_refresh(hours: int = 11):
     st.markdown(js, unsafe_allow_html=True)
 
 # start keep-alive behaviors
-start_keep_alive()
+# start_keep_alive()
 inject_client_refresh()
 
 # Display keep-alive status in UI
@@ -127,7 +140,6 @@ colorization_pipeline = pipeline(
     Tasks.image_colorization,
     model="damo/cv_ddcolor_image-colorization"
 )
-
 
 def colorizer(pil_image, saturation_boost=1.2):
     """
@@ -152,23 +164,19 @@ def colorizer(pil_image, saturation_boost=1.2):
     colorized = cv2.cvtColor(hsv.astype("uint8"), cv2.COLOR_HSV2RGB)
     return colorized
 
-# Function to colorize video
-def video_colorizer(video_file):
-    tfile = tempfile.NamedTemporaryFile(delete=False) 
+
+
+def video_colorizer(video_file, saturation_boost=1.2):
+    """
+    Args: video_file: File-like object of the input video
+          saturation_boost: Post-processing saturation multiplier (1.0 = no change)
+    Yields: (percent_complete, output_path or None)
+    """
+    # Write uploaded video to temp file
+    tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
     tfile.write(video_file.read())
-    vf = cv2.VideoCapture(tfile.name) 
-    # load model and cluster points      
-    prototxt = "models_colorization_deploy_v2.prototxt"
-    model = "colorization_release_v2.caffemodel"
-    points = "pts_in_hull.npy"
-    net = cv2.dnn.readNetFromCaffe(prototxt, model)
-    pts = np.load(points)
-    class8 = net.getLayerId("class8_ab")
-    conv8 = net.getLayerId("conv8_313_rh")
-    pts = pts.transpose().reshape(2, 313, 1, 1)
-    net.getLayer(class8).blobs = [pts.astype("float32")]
-    net.getLayer(conv8).blobs = [np.full([1, 313], 2.606, dtype="float32")]   
-    # stframe = st.empty()
+    tfile.close()
+    vf = cv2.VideoCapture(tfile.name)
     # Prepare output video writer
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     fps = vf.get(cv2.CAP_PROP_FPS) or 24
@@ -180,49 +188,39 @@ def video_colorizer(video_file):
     frame_count = 0
     while vf.isOpened():
         ret, frame = vf.read()
-        # if frame is read correctly ret is True
         if not ret:
-            print("Can't receive frame (stream end?). Exiting ...")
             break
-        scaled = frame.astype("float32") / 255.0
-        lab = cv2.cvtColor(scaled, cv2.COLOR_RGB2LAB)
+        # DDColor expects RGB numpy array
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        # Run DDColor colorization
+        result = colorization_pipeline(frame_rgb)
+        colorized = result["output_img"]  # BGR numpy array
+        # Bilateral filter to reduce color bleeding
+        for i in range(3):
+            colorized[:, :, i] = cv2.bilateralFilter(
+                colorized[:, :, i].astype("float32"), d=9, sigmaColor=25, sigmaSpace=25
+            ).astype("uint8")
 
-        # resize the Lab frame to 224x224 (the dimensions the colorization
-        # network accepts), split channels, extract the 'L' channel, and
-        # then perform mean centering
-        resized = cv2.resize(lab, (224, 224))
-        L = cv2.split(resized)[0]
-        L -= 50
+        # Boost saturation in HSV space
+        hsv = cv2.cvtColor(colorized, cv2.COLOR_BGR2HSV).astype("float32")
+        hsv[:, :, 1] *= saturation_boost
+        hsv[:, :, 1] = np.clip(hsv[:, :, 1], 0, 255)
+        colorized = cv2.cvtColor(hsv.astype("uint8"), cv2.COLOR_HSV2BGR)
 
-        # pass the L channel through the network which will *predict* the
-        # 'a' and 'b' channel values
-        net.setInput(cv2.dnn.blobFromImage(L))
-        ab = net.forward()[0, :, :, :].transpose((1, 2, 0))
+        # Ensure output matches original frame dimensions
+        if colorized.shape[:2] != (height, width):
+            colorized = cv2.resize(colorized, (width, height), interpolation=cv2.INTER_CUBIC)
 
-        # resize the predicted 'ab' volume to the same dimensions as our
-        # input frame, then grab the 'L' channel from the *original* input
-        # frame (not the resized one) and concatenate the original 'L'
-        # channel with the predicted 'ab' channels
-        ab = cv2.resize(ab, (frame.shape[1], frame.shape[0]))
-        L = cv2.split(lab)[0]
-        colorized = np.concatenate((L[:, :, np.newaxis], ab), axis=2)
-
-        # convert the output frame from the Lab color space to RGB, clip
-        # any values that fall outside the range [0, 1], and then convert
-        # to an 8-bit unsigned integer ([0, 255] range)
-        colorized = cv2.cvtColor(colorized, cv2.COLOR_LAB2RGB)
-        colorized = np.clip(colorized, 0, 1)
-        colorized = (255 * colorized).astype("uint8")        
-        #stframe.image(colorized)    
         out.write(colorized)
         frame_count += 1
         percent_complete = int((frame_count / total_frames) * 100)
         yield percent_complete, None
+
     vf.release()
     out.release()
+    os.unlink(tfile.name)  # clean up temp input file
 
-    yield 100, temp_output_path   
- 
+    yield 100, temp_output_path
             
 activities = ["Image","Video","About"]
 choice = st.sidebar.selectbox("Choose what you want to Colorize.",activities)
@@ -510,6 +508,6 @@ elif choice == "About":
     - Tackled the uncertainty in color prediction by reframing it as a classification task using class-rebalancing to produce diverse color results.
 
     The AI model performs colorization via a feed-forward pass through a CNN at test time, trained on over a million color images.
-
+    
     <h5>Developed by: Gaurav Gupta</h5>
     """, unsafe_allow_html=True)
