@@ -13,10 +13,14 @@ import time
 import requests
 import logging
 import torch
-from modelscope.pipelines import pipeline
-from modelscope.utils.constant import Tasks
-import tempfile
 
+# DDColor lightweight HuggingFace loader (clone https://github.com/piddnad/DDColor
+# and run from inside it, or sys.path.append the cloned folder)
+try:
+    from infer_hf import DDColorHF, ImageColorizationPipelineHF
+except ImportError:
+    # older DDColor checkouts use this path
+    from inference.colorization_pipeline_hf import DDColorHF, ImageColorizationPipelineHF
 
 
 # Set page configuration
@@ -40,12 +44,15 @@ if os.path.exists('wallpaper_background.jpg'):
     add_bg_from_local('wallpaper_background.jpg')
 
 
-@st.cache_resource(show_spinner="Loading colorization model…")
+@st.cache_resource(show_spinner="Loading colorization model (ddcolor_paper_tiny)…")
 def get_colorization_pipeline():
-    return pipeline(
-        Tasks.image_colorization,
-        model="damo/cv_ddcolor_image-colorization",
-    )
+    ddcolor_model = DDColorHF.from_pretrained("piddnad/ddcolor_paper_tiny")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    ddcolor_model.to(device)
+    colorizer = ImageColorizationPipelineHF(model=ddcolor_model, input_size=512)
+    colorizer.device = device
+    return colorizer
+
 colorization_pipeline = get_colorization_pipeline()
 
 
@@ -138,29 +145,30 @@ last_ping_ts = get_last_ping()
 last_ping_str = time.ctime(last_ping_ts) if last_ping_ts else "never"
 last_reload_str = time.ctime(st.session_state["last_reload"])
 
-# Download and cache model at startup (once)
-# ModelScope stores it in ~/.cache/modelscope/ by default
-colorization_pipeline = pipeline(
-    Tasks.image_colorization,
-    model="damo/cv_ddcolor_image-colorization"
-)
 
 def colorizer(pil_image, saturation_boost=1.2):
     """
-    Colorize a grayscale image using DDColor model.
+    Colorize a grayscale image using DDColor (ddcolor_paper_tiny).
     Args: pil_image: PIL Image (grayscale or RGB)
           saturation_boost: Post-processing saturation multiplier (1.0 = no change)
     Returns: numpy array (uint8 RGB) of the colorized image
     """
     pil_image = pil_image.convert("RGB")
-    # Use the pre-loaded pipeline
-    result = colorization_pipeline(np.array(pil_image))
-    colorized = result["output_img"]  # BGR numpy array
-    # Convert BGR to RGB
+    rgb = np.array(pil_image)
+    bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+
+    # DDColorHF pipeline: BGR uint8 in, BGR uint8 out
+    colorized = colorization_pipeline.process(bgr)
+
+    # back to RGB for display
     colorized = cv2.cvtColor(colorized, cv2.COLOR_BGR2RGB)
+
     # Bilateral filter to reduce color bleeding across edges
     for i in range(3):
-        colorized[:, :, i] = cv2.bilateralFilter(colorized[:, :, i].astype("float32"), d=9, sigmaColor=25, sigmaSpace=25).astype("uint8")
+        colorized[:, :, i] = cv2.bilateralFilter(
+            colorized[:, :, i].astype("float32"), d=9, sigmaColor=25, sigmaSpace=25
+        ).astype("uint8")
+
     # Boost saturation in HSV space
     hsv = cv2.cvtColor(colorized, cv2.COLOR_RGB2HSV).astype("float32")
     hsv[:, :, 1] *= saturation_boost
@@ -191,21 +199,20 @@ def video_colorizer(video_file, saturation_boost=1.2):
     out = cv2.VideoWriter(temp_output_path, fourcc, fps, (width, height))
     frame_count = 0
     while vf.isOpened():
-        ret, frame = vf.read()
+        ret, frame = vf.read()         # BGR from cv2
         if not ret:
             break
-        # DDColor expects RGB numpy array
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        # Run DDColor colorization
-        result = colorization_pipeline(frame_rgb)
-        colorized = result["output_img"]  # BGR numpy array
+
+        # BGR in, BGR out — no conversion dance needed
+        colorized = colorization_pipeline.process(frame)
+
         # Bilateral filter to reduce color bleeding
         for i in range(3):
             colorized[:, :, i] = cv2.bilateralFilter(
                 colorized[:, :, i].astype("float32"), d=9, sigmaColor=25, sigmaSpace=25
             ).astype("uint8")
 
-        # Boost saturation in HSV space
+        # Boost saturation in HSV space (input is BGR)
         hsv = cv2.cvtColor(colorized, cv2.COLOR_BGR2HSV).astype("float32")
         hsv[:, :, 1] *= saturation_boost
         hsv[:, :, 1] = np.clip(hsv[:, :, 1], 0, 255)
