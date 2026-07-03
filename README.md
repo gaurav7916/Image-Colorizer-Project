@@ -21,15 +21,10 @@ This app uses a pre-trained deep learning model to colorize black and white imag
 
 ### Technical Aspect:
 It takes a grayscale (or RGB) image/video → extracts lightness (L) → predicts color distribution (ab) using a CNN → merges → converts back to RGB → outputs a colorized image/video.
-The colorization model is based on research by Richard Zhang, Phillip Isola, and Alexei A. Efros.
 <img width="1291" height="353" alt="image" src="https://github.com/user-attachments/assets/89818302-bcf3-468f-8f63-da683df1f6df" />
 https://richzhang.github.io/colorization/resources/images/net_diagram.jpg
 
-- The technique we’ll be covering here today is from Zhang et al.’s 2016 ECCV paper, [Colorful Image Colorization](http://richzhang.github.io/colorization/). Developed at the University of California, Berkeley by Richard Zhang, Phillip Isola, and Alexei A. Efros.
-
-- Previous approaches to black and white image colorization relied on manual human annotation and often produced    desaturated results that were not “believable” as true colorizations.
-
-- Zhang et al. decided to attack the problem of image colorization by using Convolutional Neural Networks to  “hallucinate” what an input grayscale image would look like when colorized.
+- Previous approaches to black and white image colorization relied on manual human annotation and often produced desaturated results that were not “believable” as true colorizations.
 
 - To train the network Zhang et al. started with the [ImageNet dataset](http://image-net.org/) and converted all images from the RGB color space to the Lab color space.
 
@@ -60,4 +55,3 @@ streamlit run app.py
 
 ### Credits
 - [“ Black and white image colorization with OpenCV and Deep Learning” by Dr. Adrian Rosebrok "](https://www.pyimagesearch.com/2019/02/25/black-and-white-image-colorization-with-opencv-and-deep-learning/).
-- [The official publication of Zhang et al.](http://richzhang.github.io/colorization/)
